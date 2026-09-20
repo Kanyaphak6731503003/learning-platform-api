@@ -8,7 +8,30 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Invalid secret" });
   }
 
-  console.log("Webhook received:", req.body);
+  const { event, timestamp, data } = req.body;
 
-  return res.status(200).json({ status: "received" });
+  if (!event || !data) {
+    return res.status(400).json({ error: "Missing event or data" });
+  }
+
+  if (event === "submission.created") {
+    const { submissionId, assignmentId, studentId, status } = data;
+
+    console.log("Webhook received: submission.created", {
+      submissionId,
+      assignmentId,
+      studentId,
+      status,
+      timestamp,
+    });
+
+    return res.status(200).json({
+      status: "received",
+      event: "submission.created",
+      submissionId,
+    });
+  }
+
+  console.log(`Webhook received: ${event}`, data);
+  return res.status(200).json({ status: "received", event });
 }
