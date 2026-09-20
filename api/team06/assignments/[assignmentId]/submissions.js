@@ -8,18 +8,25 @@ export default async function handler(req, res) {
       headers: {
         "X-Integration-Key": process.env.TEAM06_INTEGRATION_KEY,
       },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
-      return res.status(response.status).json({
-        error: "Team 06 API request failed",
-        status: response.status,
-      });
+      throw new Error(`Team06 returned status ${response.status}`);
     }
 
     const data = await response.json();
     return res.status(200).json(data);
+
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error(`[${new Date().toISOString()}] Team06 API unreachable:`, err.message);
+
+    return res.status(200).json({
+      assignment_id: assignmentId,
+      submissions: [],
+      warning: "Team06 service temporarily unavailable, showing fallback result",
+      fallback: true,
+      error_detail: err.message,
+    });
   }
 }
