@@ -1,6 +1,9 @@
+import { applyCors } from "../_cors.js";
 import { db } from "../_firebaseAdmin.js";
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return;
+
   const { cohortId } = req.query;
 
   if (req.method === "GET") {
@@ -17,6 +20,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "DELETE") {
+    // PRD DA-04: never leave orphaned assignments behind.
+    const remaining = await db.collection("assignments").where("cohortId", "==", cohortId).limit(1).get();
+    if (!remaining.empty) {
+      return res.status(409).json({ error: "Section still has assignments. Move or delete them first." });
+    }
     await db.collection("cohorts").doc(cohortId).delete();
     return res.status(200).json({ id: cohortId, deleted: true });
   }

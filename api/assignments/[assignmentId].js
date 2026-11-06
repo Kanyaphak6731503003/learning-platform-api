@@ -1,6 +1,9 @@
+import { applyCors } from "../_cors.js";
 import { db } from "../_firebaseAdmin.js";
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return;
+
   const { assignmentId } = req.query;
   const docRef = db.collection("assignments").doc(assignmentId);
 

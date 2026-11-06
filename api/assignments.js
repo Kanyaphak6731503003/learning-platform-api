@@ -1,6 +1,9 @@
+import { applyCors } from "./_cors.js";
 import { db } from "./_firebaseAdmin.js";
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return;
+
   if (req.method === "GET") {
     const snapshot = await db.collection("assignments").get();
     const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
