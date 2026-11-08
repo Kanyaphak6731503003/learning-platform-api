@@ -1,21 +1,32 @@
 import { applyCors } from "../_cors.js";
+import { authorize, canAccess, forbid, isInstructor } from "../_auth.js";
 import { db } from "../_firebaseAdmin.js";
 
 export default async function handler(req, res) {
   if (applyCors(req, res)) return;
+  const principal = await authorize(req, res);
+  if (!principal) return;
 
   const { cohortId } = req.query;
+  const docRef = db.collection("cohorts").doc(cohortId);
+  const docSnap = await docRef.get();
+
+  if (!docSnap.exists) {
+    return res.status(404).json({ error: "Cohort not found" });
+  }
+  if (!canAccess(principal, docSnap.data())) return forbid(res);
 
   if (req.method === "GET") {
-    const docSnap = await db.collection("cohorts").doc(cohortId).get();
-    if (!docSnap.exists) {
-      return res.status(404).json({ error: "Cohort not found" });
-    }
     return res.status(200).json({ id: docSnap.id, ...docSnap.data() });
   }
 
   if (req.method === "PUT") {
-    await db.collection("cohorts").doc(cohortId).update(req.body);
+    let fields = req.body;
+    if (isInstructor(principal)) {
+      const { instructorId: _instructorId, ...editable } = req.body ?? {};
+      fields = editable;
+    }
+    await docRef.update(fields);
     return res.status(200).json({ id: cohortId, updated: true });
   }
 
@@ -25,7 +36,7 @@ export default async function handler(req, res) {
     if (!remaining.empty) {
       return res.status(409).json({ error: "Section still has assignments. Move or delete them first." });
     }
-    await db.collection("cohorts").doc(cohortId).delete();
+    await docRef.delete();
     return res.status(200).json({ id: cohortId, deleted: true });
   }
 
