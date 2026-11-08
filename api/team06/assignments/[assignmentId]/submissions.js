@@ -1,18 +1,8 @@
 import { applyCors } from "../../../_cors.js";
-import { authorize, canAccess, forbid, isInstructor } from "../../../_auth.js";
-import { db } from "../../../_firebaseAdmin.js";
 export default async function handler(req, res) {
   if (applyCors(req, res)) return;
 
-  const principal = await authorize(req, res);
-  if (!principal) return;
-
   const { assignmentId } = req.query;
-
-  if (isInstructor(principal)) {
-    const snap = await db.collection("assignments").doc(assignmentId).get();
-    if (!snap.exists || !canAccess(principal, snap.data())) return forbid(res);
-  }
 
   try {
     const url = `${process.env.TEAM06_BASE_URL}/assignments/${assignmentId}/submissions`;

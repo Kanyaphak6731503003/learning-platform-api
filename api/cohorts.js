@@ -1,22 +1,17 @@
 import { applyCors } from "./_cors.js";
-import { authorize, isInstructor } from "./_auth.js";
 import { db } from "./_firebaseAdmin.js";
 
 export default async function handler(req, res) {
   if (applyCors(req, res)) return;
-  const principal = await authorize(req, res);
-  if (!principal) return;
 
   if (req.method === "GET") {
-    const base = db.collection("cohorts");
-    const snapshot = await (isInstructor(principal) ? base.where("instructorId", "==", principal.uid) : base).get();
+    const snapshot = await db.collection("cohorts").get();
     const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     return res.status(200).json(data);
   }
 
   if (req.method === "POST") {
-    const owner = isInstructor(principal) ? { instructorId: principal.uid } : {};
-    const docRef = await db.collection("cohorts").add({ ...req.body, ...owner });
+    const docRef = await db.collection("cohorts").add(req.body);
     return res.status(201).json({ id: docRef.id });
   }
 
