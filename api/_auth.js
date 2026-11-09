@@ -26,7 +26,8 @@ export async function authorize(req, res) {
 
   const key = req.headers["x-integration-key"];
   if (key) {
-    if (!keyMatches(key, process.env.INTEGRATION_READ_KEY)) {
+    // Partner teams use the key already shared with Team 06 unless a separate one is set.
+    if (!keyMatches(key, process.env.INTEGRATION_READ_KEY || process.env.TEAM06_INTEGRATION_KEY)) {
       res.status(401).json({ error: "Invalid integration key" });
       return null;
     }
