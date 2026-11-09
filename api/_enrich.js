@@ -7,6 +7,12 @@ async function namesById(collection, ids, field) {
   return Object.fromEntries(snaps.filter((s) => s.exists).map((s) => [s.id, s.data()[field] ?? null]));
 }
 
+// A section with no assignments yet still needs to show who teaches it.
+export async function withInstructorNames(cohorts) {
+  const users = await namesById("users", cohorts.map((c) => c.instructorId), "fullName");
+  return cohorts.map((c) => ({ ...c, instructorName: users[c.instructorId] ?? null }));
+}
+
 // Adds the display names partner teams and the frontend need alongside the raw IDs.
 export async function withNames(assignments) {
   const [cohorts, users] = await Promise.all([

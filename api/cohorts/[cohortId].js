@@ -1,5 +1,6 @@
 import { applyCors } from "../_cors.js";
 import { authorize, canAccess, forbid, isInstructor } from "../_auth.js";
+import { withInstructorNames } from "../_enrich.js";
 import { db } from "../_firebaseAdmin.js";
 
 export default async function handler(req, res) {
@@ -17,7 +18,8 @@ export default async function handler(req, res) {
   if (!canAccess(principal, docSnap.data())) return forbid(res);
 
   if (req.method === "GET") {
-    return res.status(200).json({ id: docSnap.id, ...docSnap.data() });
+    const [record] = await withInstructorNames([{ id: docSnap.id, ...docSnap.data() }]);
+    return res.status(200).json(record);
   }
 
   if (req.method === "PUT") {

@@ -1,5 +1,6 @@
 import { applyCors } from "./_cors.js";
 import { authorize, isInstructor } from "./_auth.js";
+import { withInstructorNames } from "./_enrich.js";
 import { db } from "./_firebaseAdmin.js";
 
 export default async function handler(req, res) {
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
     const base = db.collection("cohorts");
     const snapshot = await (isInstructor(principal) ? base.where("instructorId", "==", principal.uid) : base).get();
     const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    return res.status(200).json(data);
+    return res.status(200).json(await withInstructorNames(data));
   }
 
   if (req.method === "POST") {
